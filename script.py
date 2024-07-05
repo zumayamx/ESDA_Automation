@@ -43,18 +43,26 @@ def remove_background(image_path, white_background_path):
     segmented_image = centers[labels.flatten()]
     segmented_image = segmented_image.reshape(img.shape)
 
-    # Máscara para remover el fondo
-    mask = labels.reshape(img.shape[:2])
-    background = (mask == 0)
-
-    # Combinar el primer plano con el fondo blanco
-    img_with_white_bg = white_background.copy()
-    img_with_white_bg[~background] = img[~background]
-
-    # Guardar las imágenes
-    cv2.imwrite("original_image.png", img)
+    # Guardar la imagen segmentada
     cv2.imwrite("segmented_image.png", segmented_image)
-    cv2.imwrite("image_with_white_background.png", img_with_white_bg)
+
+    # Usar la imagen segmentada para crear una máscara más precisa
+    gray_segmented = cv2.cvtColor(segmented_image, cv2.COLOR_RGB2GRAY)
+    _, mask = cv2.threshold(gray_segmented, 1, 255, cv2.THRESH_BINARY)
+
+    # Invertir la máscara para obtener el fondo
+    mask_inv = cv2.bitwise_not(mask)
+
+    # Crear una imagen de fondo blanco del mismo tamaño
+    white_background = np.full_like(img, 255)
+
+    # Aplicar la máscara para obtener la imagen con fondo blanco
+    img_with_white_bg = cv2.bitwise_and(img, img, mask=mask)
+    white_bg_part = cv2.bitwise_and(white_background, white_background, mask=mask_inv)
+    result = cv2.add(img_with_white_bg, white_bg_part)
+
+    # Guardar la imagen final con fondo blanco
+    cv2.imwrite("image_with_white_background.png", result)
 
 # Probar la función
-remove_background('./test_images/one_sparkplug.jpeg', './test_images/white_background.jpg')
+remove_background('./test_images/bujias.jpg', './test_images/white_background.jpg')
