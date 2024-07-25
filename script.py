@@ -112,10 +112,10 @@ def get_dimensions_of_any_image(image_path):
 
 # Test fuctions
 print("Dimensions of background image: ")
-get_dimensions_of_any_image('./test_images/white_background.jpg')
+get_dimensions_of_any_image('./test_images/one_sparkplug_clean.jpg')
 print("Dimensions of test image: ")
-get_dimensions_of_any_image('./test_images/one_sparkplug_clean.jpeg')
-center_image('./test_images/one_sparkplug_clean.jpeg')
+get_dimensions_of_any_image('./test_images/one_sparkplug_clean.jpg')
+center_image('./test_images/one_sparkplug_clean.jpg')
 
 # def remove_noise(image_path):
 #         # Leer la imagen
