@@ -5,8 +5,8 @@
 # - FOCUS ON THE FUCTION TO CENTER THE OBJECT IN A STATIC IMAGE
 
 import cv2
-import numpy as np
-import matplotlib.pyplot as plt
+# import numpy as np
+# import matplotlib.pyplot as plt
 from PIL import Image
 
 def center_image(image_path):
@@ -31,11 +31,12 @@ def center_image(image_path):
 
     # Convert image to RGB
     edges = edges.convert("RGB")
+    # cv2.imwrite("edges_image_color.png", edges)
     pixels = edges.load()
 
     width, height = edges.size
-    print("Height of edge image:", height)
-    print("Width of edge image:", width)
+    # print("Height of edge image:", height)
+    # print("Width of edge image:", width)
 
     # Find the first white pixel from right to left
     line_x = None
@@ -82,19 +83,76 @@ def center_image(image_path):
             break
 
     # Draw a horizontal red line at the found position
-    if line_y is not None:
+    if line_y and line_y_top is not None:
         for x in range(width):
-            pixels[x, line_y] = (255, 0, 0)
-            pixels[x, line_y_top] = (255, 0, 0)
+            pixels[x, line_y - 1] = (255, 0, 0)
+            pixels[x, line_y_top + 1] = (255, 0, 0)
 
     # Draw a vertical red line at the found position
-    if line_x is not None and line_x_left is not None:
+    if line_x and line_x_left is not None:
         for y in range(height):
-            pixels[line_x, y] = (255, 0, 0)
-            pixels[line_x_left, y] = (255, 0, 0)
+            pixels[line_x + 1, y] = (255, 0, 0)
+            pixels[line_x_left - 1, y] = (255, 0, 0)
 
     # Save the modified image
     edges.save("edges_image_with_line_in_pixel.png")
+
+    # Cut the object from the image
+    cropped_image = img[line_y:line_y_top, line_x_left:line_x]
+    cv2.imwrite("cropped_image.png", cropped_image)
+
+    # Put cropped image in a white background
+    img_cropped = cv2.imread("cropped_image.png")
+    white_background = cv2.imread("./test_images/white_background.jpg")
+
+    if img is None:
+        print("Error: could not read image cropped.")
+        return
+    
+    # Get dimensions of the cropped image and the white background
+    height, width, _ = img_cropped.shape
+    height_white, width_white, _ = white_background.shape
+    print("Height of cropped image:", height)
+    print("Width of cropped image:", width)
+    print("Height of white background:", height_white)
+    print("Width of white background:", width_white)
+
+    # Find the position to paste the cropped image in the white background
+    y_position = (height_white - height) // 2
+    x_position = (width_white - width) // 2
+
+    # Paste the cropped image in the white background
+    white_background[y_position:y_position + height, x_position:x_position + width] = img_cropped
+
+    # Save the image with the object centered in the white background
+    cv2.imwrite("centered_image.png", white_background)
+
+    # Draw the accuotes in the image
+    # Load the image
+    img_complete_edges = Image.open("centered_image.png")
+    edges_complete = img_complete_edges.convert("RGB")
+    pixels_complete = edges_complete.load()
+
+    y_position_r = y_position - 80
+
+    for x in range (x_position, x_position + width + 1):
+        for r in range (5, - 1, - 1):
+            pixels_complete[x, y_position_r  - r] = (255, 0, 0)
+
+    x_position_r = x_position - 80
+
+    for y in range(y_position, y_position + height + 1):
+        for r in range (5, - 1, - 1):
+            pixels_complete[x_position_r - r, y] = (255, 0, 0)
+
+    edges_complete.save("centered_image_with_line.png")
+    print("x_position: ", x_position)
+    print("sum: ", x_position + width)
+    get_dimensions_of_any_image("centered_image_with_line.png")
+    
+
+
+
 
 
 def get_dimensions_of_any_image(image_path):
@@ -111,11 +169,11 @@ def get_dimensions_of_any_image(image_path):
     print("Channels:", channels)
 
 # Test fuctions
-print("Dimensions of background image: ")
-get_dimensions_of_any_image('./test_images/one_sparkplug_clean.jpg')
+# print("Dimensions of background image: ")
+# get_dimensions_of_any_image('./test_images/white_background.jpg')
 print("Dimensions of test image: ")
-get_dimensions_of_any_image('./test_images/one_sparkplug_clean.jpg')
-center_image('./test_images/one_sparkplug_clean.jpg')
+get_dimensions_of_any_image('./test_images/one_sparkplug_clean_left.jpg')
+center_image('./test_images/depot_esferic.jpg')
 
 # def remove_noise(image_path):
 #         # Leer la imagen
