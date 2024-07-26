@@ -148,10 +148,28 @@ def center_image(image_path):
     print("y_position_r: ", y_position_r)
     print("x_position_r: ", x_position_r)
 
-    # An aproach to y axis
-    for x in range (x_position - 5, x_position + 1):
+    print("y_position: ", y_position)
+    print("x_position: ", x_position)
+
+    # Draw the remaining line in x axis left 
+    for x in range (x_position - 5, x_position):
         for r in range (y_position_r + 5, y_position_r - 11, -1):
             pixels_complete[x, r] = (0, 0, 0)
+
+    # Draw the remaining line in x axis right
+    for x in range (x_position + width + 1, x_position + width + 6):
+        for r in range (y_position_r + 5, y_position_r - 11, -1):
+            pixels_complete[x, r] = (0, 0, 0)
+    
+    # Draw the remaining line in y axis top
+    for y in range (y_position - 5, y_position):
+        for r in range (x_position_r + 5, x_position_r - 11, -1):
+            pixels_complete[r, y] = (0, 0, 0)
+
+    # Draw the remaining line in y axis bottom
+    for y in range (y_position + height + 1, y_position + height + 6):
+        for r in range (x_position_r + 5, x_position_r - 11, -1):
+            pixels_complete[r, y] = (0, 0, 0)
 
 
     edges_complete.save("centered_image_with_line.png")
