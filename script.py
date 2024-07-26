@@ -136,18 +136,25 @@ def center_image(image_path):
     y_position_r = y_position - 80
 
     for x in range (x_position, x_position + width + 1):
-        for r in range (5, - 1, - 1):
-            pixels_complete[x, y_position_r  - r] = (255, 0, 0)
+        for r in range (5, -1, -1):
+            pixels_complete[x, y_position_r  - r] = (0, 0, 0)
 
     x_position_r = x_position - 80
 
     for y in range(y_position, y_position + height + 1):
-        for r in range (5, - 1, - 1):
-            pixels_complete[x_position_r - r, y] = (255, 0, 0)
+        for r in range (5, -1, -1):
+            pixels_complete[x_position_r - r, y] = (0, 0, 0)
+
+    print("y_position_r: ", y_position_r)
+    print("x_position_r: ", x_position_r)
+
+    # An aproach to y axis
+    for x in range (x_position - 5, x_position + 1):
+        for r in range (y_position_r + 5, y_position_r - 11, -1):
+            pixels_complete[x, r] = (0, 0, 0)
+
 
     edges_complete.save("centered_image_with_line.png")
-    print("x_position: ", x_position)
-    print("sum: ", x_position + width)
     get_dimensions_of_any_image("centered_image_with_line.png")
     
 
@@ -173,7 +180,7 @@ def get_dimensions_of_any_image(image_path):
 # get_dimensions_of_any_image('./test_images/white_background.jpg')
 print("Dimensions of test image: ")
 get_dimensions_of_any_image('./test_images/one_sparkplug_clean_left.jpg')
-center_image('./test_images/depot_esferic.jpg')
+center_image('./test_images/one_sparkplug_clean_left.jpg')
 
 # def remove_noise(image_path):
 #         # Leer la imagen
