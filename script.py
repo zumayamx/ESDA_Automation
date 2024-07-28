@@ -1,6 +1,7 @@
 # TO DO:
 # - REQUEST THE MEASUREMENTS TO ADD
 # - FUNCION TO REMOVE REAL NOISE AND KEEP ONLY THE OBJECT IN A WHITE BACKGROUND
+# - VERIFY THE SIZE OF THE OBJECT AND THE BACKGROUND -- **SO IMPORTANT**
 # - FOCUS ON THE FUCTION TO CENTER THE OBJECT IN A STATIC IMAGE
 
 import cv2
@@ -170,12 +171,29 @@ def center_image(image_path):
         for r in range (x_position_r + 5, x_position_r - 11, -1):
             pixels_complete[r, y] = (0, 0, 0)
 
-
     edges_complete.save("centered_image_with_line.png")
+
+    # Read the image for drawing the measurements
+    img_measuremets = cv2.imread("centered_image_with_line.png")
+    if img is None:
+        print("Error: could not read image.")
+        return
+    
+    height_input = input("Enter the heigh of the object: ")
+    width_input = input("Enter the width of the object: ")
+    font = cv2.FONT_HERSHEY_SIMPLEX
+
+
+    position_with = (x_position + (int(width) // 2) - 40, y_position_r - 40)
+    position_height = (x_position_r - 150, y_position + (int(height) // 2) + 5)
+
+    cv2.putText(img_measuremets, f'{width_input} cm', position_with, font, 1, (0, 0, 0), 1, cv2.LINE_AA)
+    cv2.putText(img_measuremets, f'{height_input} cm', position_height, font, 1, (0, 0, 0), 1, cv2.LINE_AA)
+
+    cv2.imwrite("centered_image_with_line_and_measurements.png", img_measuremets)
+
     get_dimensions_of_any_image("centered_image_with_line.png")
     
-
-
 
 
 
@@ -198,6 +216,7 @@ def get_dimensions_of_any_image(image_path):
 print("Dimensions of test image: ")
 get_dimensions_of_any_image('./test_images/one_sparkplug_clean_left.jpg')
 center_image('./test_images/one_sparkplug_clean_left.jpg')
+# center_image('./test_images/depot_esferic.jpg')
 
 # def remove_noise(image_path):
 #         # Leer la imagen
