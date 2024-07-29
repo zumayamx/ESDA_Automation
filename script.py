@@ -2,12 +2,136 @@
 # - REQUEST THE MEASUREMENTS TO ADD
 # - FUNCION TO REMOVE REAL NOISE AND KEEP ONLY THE OBJECT IN A WHITE BACKGROUND
 # - VERIFY THE SIZE OF THE OBJECT AND THE BACKGROUND -- **SO IMPORTANT**
+# - TO HAVE MANU FUNCTIONS TO DO DIFFERENT THINGS, NOT ONLY ADD MEASUREMENTS
 # - FOCUS ON THE FUCTION TO CENTER THE OBJECT IN A STATIC IMAGE
+# - FIX THE CODE STRUCTURE
 
 import cv2
 # import numpy as np
 # import matplotlib.pyplot as plt
 from PIL import Image
+
+def get_edges_image(image_path):
+    # Read the image
+    img = cv2.imread(image_path)
+    
+    if img is None:
+        print("Error: could not read image at ged_edges_image.")
+        return
+    
+    # Convert the image to grayscale
+    gray_test_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # Detect edges in the image using the Canny
+    edges_image = cv2.Canny(gray_test_img, 50, 150)
+
+    # Show the image with edges, like return?
+    cv2.imwrite("edges_image.png", edges_image)
+
+def find_first_white_pixel(image_path):
+    #Read the image
+    edges_image = Image.open(image_path)
+
+    if edges_image is None:
+        print("Error: could not read image at find_first_white_pixel.")
+        return
+
+    # Convert image to RGB
+    edges_image = edges_image.convert("RGB")
+    
+    # cv2.imwrite("edges_image_image_color.png", edges_image)
+    pixels = edges_image.load()
+
+    # Get the dimensions of the image
+    width, height = edges_image.size
+
+    # Find the first white pixel from right to left
+    pixel_right_left = None
+    for x in range(width - 1, -1, -1):
+        for y in range(height):
+            r, g, b = pixels[x, y]
+            if r > 200 and g > 200 and b > 200:  # Considering near white pixel
+                pixel_right_left = x
+                break
+        if pixel_right_left is not None:
+            break
+    
+    # Find the first white pixel from the left to right
+    pixel_left_right = None
+    for x in range(width):
+        for y in range(height):
+            r, g, b = pixels[x, y]
+            if r > 200 and g > 200 and b > 200:  # Considering near white pixel
+                pixel_left_right = x
+                break
+        if pixel_left_right is not None:
+            break
+    
+    # Find the first white pixel from top to bottom
+    pixel_top_bottom = None
+    for y in range(height):
+        for x in range(width):
+            r, g, b = pixels[x, y]
+            if r > 200 and g > 200 and b > 200:  # Considering near white pixel
+                pixel_top_bottom = y
+                break
+        if pixel_top_bottom is not None:
+            break
+    
+    # Find the first white pixel from bottom to top
+    pixel_bottom_top = None
+    for y in range(height - 1, -1, -1):
+        for x in range(width):
+            r, g, b = pixels[x, y]
+            if r > 200 and g > 200 and b > 200:  # Considering near white pixel
+                pixel_bottom_top = y
+                break
+        if pixel_bottom_top is not None:
+            break
+    
+    return pixel_right_left, pixel_left_right, pixel_top_bottom, pixel_bottom_top
+
+# This funcion is to see what is the position of the object in the image, it's not used in a real case
+def draw_red_lines(pixel_right_left, pixel_left_right, pixel_top_bottom, pixel_bottom_top, image_path):
+    # Read the image with PIL
+    edges_image = Image.open(image_path)
+
+    if edges_image is None:
+        print("Error: could not read image at draw_red_lines.")
+        return
+
+    # Convert image to RGB
+    edges_image = edges_image.convert("RGB")
+
+    # Convert image to pixels read format
+    pixels = edges_image.load()
+
+    # Get the dimensions of the image
+    width, height = edges_image.size
+
+    # Draw a horizontal red line at the found position
+    if pixel_top_bottom and pixel_bottom_top is not None:
+        for x in range(width):
+            pixels[x, pixel_top_bottom - 1] = (255, 0, 0)
+            pixels[x, pixel_bottom_top + 1] = (255, 0, 0)
+
+    # Draw a vertical red line at the found position
+    if pixel_right_left and pixel_left_right is not None:
+        for y in range(height):
+            pixels[pixel_right_left + 1, y] = (255, 0, 0)
+            pixels[pixel_left_right - 1, y] = (255, 0, 0)
+
+    # Save the modified image, like return?
+    edges_image.save("edges_image_with_line_red_in_pixel.png")
+
+def paste_object_image_in_white_background(pixel_right_left, pixel_left_right, pixel_top_bottom, pixel_bottom_top, white_image_path, object_image_path):
+    # Read the image
+    white_background = cv2.imread(white_image_path)
+
+    # Read the object image, this to have the same red lines that the object image
+    cropped_image = cv2.imread(object_image_path)
+
+
 
 def center_image(image_path):
     # Read the image
