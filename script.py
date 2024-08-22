@@ -129,7 +129,98 @@ def paste_object_image_in_white_background(pixel_right_left, pixel_left_right, p
     white_background = cv2.imread(white_image_path)
 
     # Read the object image, this to have the same red lines that the object image
-    cropped_image = cv2.imread(object_image_path)
+    obj_img = cv2.imread(object_image_path)
+    cropped_image = obj_img[pixel_top_bottom:pixel_bottom_top, pixel_left_right:pixel_right_left]
+
+    # Get dimensions of the cropped image and the white background
+    height, width, _ = cropped_image.shape
+    height_white, width_white, _ = white_background.shape
+
+    # Find the position to paste the cropped image in the white background
+    y_position = (height_white - height) // 2
+    x_position = (width_white - width) // 2
+
+    # Paste the cropped image in the white background
+    white_background[y_position:y_position + height, x_position:x_position + width] = cropped_image
+
+    # Save the image with the object centered in the white background
+    cv2.imwrite("centered_image.png", white_background)
+
+    return y_position, x_position
+
+def draw_accurate_lines_meansurements(y_position, x_position, centered_img_path):
+
+    #Read the image for drawing the measurements
+    img_centered = Image.open(centered_img_path)
+    img_centered_edges = img_centered.convert("RGB")
+    pixels_centered = img_centered_edges.load()
+
+    # Get the dimensions of the image
+    height, width, _ = img_centered.shape
+
+    y_position_r = y_position - 80
+
+    for x in range (x_position, x_position + width + 1):
+        for r in range (5, -1, -1):
+            pixels_centered[x, y_position_r  - r] = (0, 0, 0)
+
+    x_position_r = x_position - 80
+
+    for y in range(y_position, y_position + height + 1):
+        for r in range (5, -1, -1):
+            pixels_centered[x_position_r - r, y] = (0, 0, 0)
+
+    print("y_position_r: ", y_position_r)
+    print("x_position_r: ", x_position_r)
+
+    print("y_position: ", y_position)
+    print("x_position: ", x_position)
+
+    # Draw the remaining line in x axis left
+    for x in range (x_position - 5, x_position):
+        for r in range (y_position_r + 5, y_position_r - 11, -1):
+            pixels_centered[x, r] = (0, 0, 0)
+    
+    # Draw the remaining line in x axis right
+    for x in range (x_position + width + 1, x_position + width + 6):
+        for r in range (y_position_r + 5, y_position_r - 11, -1):
+            pixels_centered[x, r] = (0, 0, 0)
+
+    # Draw the remaining line in y axis top
+    for y in range (y_position - 5, y_position):
+        for r in range (x_position_r + 5, x_position_r - 11, -1):
+            pixels_centered[r, y] = (0, 0, 0)
+    
+    # Draw the remaining line in y axis bottom
+    for y in range (y_position + height + 1, y_position + height + 6):
+        for r in range (x_position_r + 5, x_position_r - 11, -1):
+            pixels_centered[r, y] = (0, 0, 0)
+    
+    img_centered_edges.save("centered_image_with_line.png")
+
+    # Read the image for drawing the measurements
+    img_measuremets = cv2.imread("centered_image_with_line.png")
+    if img_measuremets is None:
+        print("Error: could not read image.")
+        return
+    
+    height_input = input("Enter the heigh of the object: ")
+    width_input = input("Enter the width of the object: ")
+    font = cv2.FONT_HERSHEY_SIMPLEX
+
+    position_with = (x_position + (int(width) // 2) - 40, y_position_r - 40)
+    position_height = (x_position_r - 150, y_position + (int(height) // 2) + 5)
+
+    cv2.putText(img_measuremets, f'{width_input} cm', position_with, font, 1, (0, 0, 0), 1, cv2.LINE_AA)
+    cv2.putText(img_measuremets, f'{height_input} cm', position_height, font, 1, (0, 0, 0), 1, cv2.LINE_AA)
+
+    cv2.imwrite("centered_image_with_line_and_measurements.png", img_measuremets)
+
+    get_dimensions_of_any_image("centered_image_with_line.png")
+
+
+
+
 
 
 
@@ -334,65 +425,3 @@ def get_dimensions_of_any_image(image_path):
     print("Width:", width)
     print("Channels:", channels)
 
-# Test fuctions
-# print("Dimensions of background image: ")
-# get_dimensions_of_any_image('./test_images/white_background.jpg')
-print("Dimensions of test image: ")
-get_dimensions_of_any_image('./test_images/one_sparkplug_clean_left.jpg')
-center_image('./test_images/one_sparkplug_clean_left.jpg')
-# center_image('./test_images/depot_esferic.jpg')
-
-# def remove_noise(image_path):
-#         # Leer la imagen
-#     img = cv2.imread(image_path)
-#     if img is None:
-#         print("Error: could not read image.")
-#         return
-
-#     # Convertir la imagen a escala de grises
-#     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-#     # Aplicar un umbral para segmentar la bujía del fondo
-#     _, binary = cv2.threshold(gray, 254, 255, cv2.THRESH_BINARY_INV)
-
-#     # Aplicar operaciones morfológicas para eliminar el ruido
-#     kernel = np.ones((3, 3), np.uint8)
-#     opening = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel, iterations=2)
-#     closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel, iterations=2)
-
-#     # Crear una máscara para la bujía
-#     mask = closing
-
-#     # Aplicar la máscara a la imagen original
-#     result = cv2.bitwise_and(img, img, mask=mask)
-
-#     # Guardar la imagen resultante
-#     cv2.imwrite("cleaned_image.png", result)
-
-#     # Centrar la imagen en un fondo blanco
-
-# remove_noise('./test_images/box_sparkplug.jpeg')
-
-# def segment_with_grabcut(image_path):
-#     img = cv2.imread(image_path)
-#     mask = np.zeros(img.shape[:2], np.uint8)
-    
-#     bgdModel = np.zeros((1, 65), np.float64)
-#     fgdModel = np.zeros((1, 65), np.float64)
-    
-#     rect = (50, 50, img.shape[1]-50, img.shape[0]-50) # Define el rectángulo inicial
-    
-#     cv2.grabCut(img, mask, rect, bgdModel, fgdModel, 5, cv2.GC_INIT_WITH_RECT)
-    
-#     mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
-#     img = img * mask2[:, :, np.newaxis]
-    
-#     plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-#     plt.axis('off')
-#     plt.show()
-
-# Probar la función
-# segment_with_grabcut('./test_images/sparkplugs.jpeg')
-
-# Probar la función
-# remove_noise('./test_images/one_sparkplug.jpeg')
