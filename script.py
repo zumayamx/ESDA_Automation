@@ -5,6 +5,7 @@
 # - TO HAVE MANU FUNCTIONS TO DO DIFFERENT THINGS, NOT ONLY ADD MEASUREMENTS
 # - FOCUS ON THE FUCTION TO CENTER THE OBJECT IN A STATIC IMAGE
 # - FIX THE CODE STRUCTURE
+# - CHECK THE DIFF SHAPES OF THE OBJECTS
 
 import cv2
 # import numpy as np
@@ -159,9 +160,9 @@ def paste_object_image_in_white_background(pixel_right_left, pixel_left_right, p
     # Save the image with the object centered in the white background
     cv2.imwrite("centered_image.png", white_background)
 
-    return y_position, x_position
+    return y_position, x_position, height, width
 
-def draw_accurate_lines_meansurements(y_position, x_position, image_path):
+def draw_accurate_lines_meansurements(y_position, x_position, h, w,  image_path):
 
     #Read the image for drawing the measurements
     img = Image.open(image_path)
@@ -169,7 +170,7 @@ def draw_accurate_lines_meansurements(y_position, x_position, image_path):
     pixels_centered = img_centered_edges.load()
 
     # Get the dimensions of the image
-    height, width, _ = img_centered_edges.size
+    height, width = h, w
 
     y_position_r = y_position - 80
 
@@ -231,5 +232,34 @@ def draw_accurate_lines_meansurements(y_position, x_position, image_path):
 
     get_dimensions_of_any_image("centered_image_with_line.png")
 
+def main():
 
+    # Path of the general image
+    image_path = "test_images/bujia_rm-removebg-preview.jpg"
+    
+    # Path of the white background image
+    white_image_path = "./test_images/white_background.jpg"
+    # Get the dimensions of the image
+    get_dimensions_of_any_image(image_path)
+
+    # Ged dimensions of white background
+    get_dimensions_of_any_image(white_image_path)
+
+    # Get the edges of the image
+    get_edges_image(image_path)
+
+    # Find the first white pixel in the image
+    pixel_right_left, pixel_left_right, pixel_top_bottom, pixel_bottom_top = find_first_white_pixel("edges_image.png")
+
+    # Draw red lines in the image
+    draw_red_lines(pixel_right_left, pixel_left_right, pixel_top_bottom, pixel_bottom_top, "edges_image.png")
+
+    # Paste the object image in a white background
+    y_position, x_position, heigh, width = paste_object_image_in_white_background(pixel_right_left, pixel_left_right, pixel_top_bottom, pixel_bottom_top, white_image_path, image_path)
+
+    # Draw the accurate lines for measurements
+    draw_accurate_lines_meansurements(y_position, x_position, heigh, width, "centered_image.png")
+
+if __name__ == "__main__":
+    main()
     
