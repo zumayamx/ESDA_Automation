@@ -232,6 +232,30 @@ def draw_accurate_lines_meansurements(y_position, x_position, h, w,  image_path)
 
     get_dimensions_of_any_image("centered_image_with_line.png")
 
+
+def try_to_remove_noise(image_path):
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+
+    # define a threshold
+    thresh = 110
+
+    # threshold the image
+    img = cv2.threshold(img, thresh, 255, cv2.THRESH_BINARY)[1]
+
+    #convert nparray data
+    img = Image.fromarray(img)
+    img = img.convert("RGBA")
+
+    pixdata = img.load()
+
+    width, height = img.size
+    for y in range(height):
+        for x in range(width):
+            if pixdata[x, y] == (255, 255, 255, 255):   #transparent
+                pixdata[x, y] = (255, 255, 255, 0)
+
+    img.save("img2.png", "PNG")
+
 def main():
 
     # Path of the general image
@@ -239,6 +263,8 @@ def main():
     
     # Path of the white background image
     white_image_path = "./test_images/white_background.jpg"
+
+    try_to_remove_noise("./test_images/bujia_example_noise.jpg")
     # Get the dimensions of the image
     get_dimensions_of_any_image(image_path)
 
@@ -262,4 +288,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
