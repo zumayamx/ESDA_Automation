@@ -1,13 +1,12 @@
 # TO DO:
-# - REQUEST THE MEASUREMENTS TO ADD
-# - FUNCION TO REMOVE REAL NOISE AND KEEP ONLY THE OBJECT IN A WHITE BACKGROUND
 # - VERIFY THE SIZE OF THE OBJECT AND THE BACKGROUND -- **SO IMPORTANT**
 # - TO HAVE MANU FUNCTIONS TO DO DIFFERENT THINGS, NOT ONLY ADD MEASUREMENTS
-# - FOCUS ON THE FUCTION TO CENTER THE OBJECT IN A STATIC IMAGE
-# - FIX THE CODE STRUCTURE
 # - CHECK THE DIFF SHAPES OF THE OBJECTS
-
+# - REM THE CONTOURS OF THE OBJECTS
 import cv2
+
+import numpy as np
+import rembg
 # import numpy as np
 # import matplotlib.pyplot as plt
 from PIL import Image
@@ -139,16 +138,28 @@ def draw_red_lines(pixel_right_left, pixel_left_right, pixel_top_bottom, pixel_b
     edges_image.save("edges_image_with_line_red_in_pixel.png")
 
 def paste_object_image_in_white_background(pixel_right_left, pixel_left_right, pixel_top_bottom, pixel_bottom_top, white_image_path, object_image_path):
-    # Read the image
+    # Read the white background and the object image
     white_background = cv2.imread(white_image_path)
-
-    # Read the object image, this to have the same red lines that the object image
     obj_img = cv2.imread(object_image_path)
+    
+    # Crop the object image based on the provided coordinates
     cropped_image = obj_img[pixel_top_bottom:pixel_bottom_top, pixel_left_right:pixel_right_left]
 
     # Get dimensions of the cropped image and the white background
     height, width, _ = cropped_image.shape
     height_white, width_white, _ = white_background.shape
+
+    # Validate if the white background is large enough to contain the cropped image
+    if height > height_white or width > width_white:
+        # Option 1: Automatically resize the white background
+        # Calculate the new dimensions for the white background to ensure it fits the cropped image
+        new_height = max(height + 300, height_white)
+        new_width = max(width + 300, width_white)
+        white_background = cv2.resize(white_background, (new_width, new_height))
+
+        # Update the dimensions after resizing
+        height_white, width_white, _ = white_background.shape
+        print(f"Resized white background to: {new_width}x{new_height}")
 
     # Find the position to paste the cropped image in the white background
     y_position = (height_white - height) // 2
@@ -232,39 +243,46 @@ def draw_accurate_lines_meansurements(y_position, x_position, h, w,  image_path)
 
     get_dimensions_of_any_image("centered_image_with_line.png")
 
+def try_to_remove_background(image_path, white_image_path):
+    input_image = Image.open(image_path)
+    input_array = np.array(input_image)
+    output_array = rembg.remove(input_array)
 
-def try_to_remove_noise(image_path):
-    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    print("image")
+    output_image = Image.fromarray(output_array)
 
-    # define a threshold
-    thresh = 110
+    # Mantener output_image en RGBA para la transparencia
+    if output_image.mode != 'RGBA':
+        output_image = output_image.convert('RGBA')
+    
+    # Abrir la imagen de fondo blanco
+    white_image = Image.open(white_image_path)
 
-    # threshold the image
-    img = cv2.threshold(img, thresh, 255, cv2.THRESH_BINARY)[1]
+    # Asegurar que la imagen de fondo blanco tenga el mismo tamaño que la imagen de entrada
+    white_image = white_image.resize(output_image.size)
+    
+    # Pegar la imagen con transparencia sobre el fondo blanco
+    white_image.paste(output_image, (0, 0), output_image)
 
-    #convert nparray data
-    img = Image.fromarray(img)
-    img = img.convert("RGBA")
+    # Convertir a RGB antes de guardar
+    white_image = white_image.convert('RGB')
+    white_image.save("rem_bujia_noise_white.jpg")
 
-    pixdata = img.load()
-
-    width, height = img.size
-    for y in range(height):
-        for x in range(width):
-            if pixdata[x, y] == (255, 255, 255, 255):   #transparent
-                pixdata[x, y] = (255, 255, 255, 0)
-
-    img.save("img2.png", "PNG")
+    print("save")
+    output_image.convert('RGB').save("rem_bujia_noise.jpg")
+    print("saved")
 
 def main():
 
-    # Path of the general image
-    image_path = "test_images/bujia_rm-removebg-preview.jpg"
+    # Path of the general image test_images/bujia_rm-removebg-preview.jpg
+    image_path = "rem_bujia_noise_white.jpg"
     
     # Path of the white background image
     white_image_path = "./test_images/white_background.jpg"
 
-    try_to_remove_noise("./test_images/bujia_example_noise.jpg")
+    example_image = "./test_images/IMG_1039.jpg"
+
+    try_to_remove_background(example_image, white_image_path)
     # Get the dimensions of the image
     get_dimensions_of_any_image(image_path)
 
