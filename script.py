@@ -280,7 +280,7 @@ def main():
     # Path of the white background image
     white_image_path = "./test_images/white_background.jpg"
 
-    example_image = "./test_images/IMG_1039.jpg"
+    example_image = "IMG_1317.png"
 
     try_to_remove_background(example_image, white_image_path)
     # Get the dimensions of the image
