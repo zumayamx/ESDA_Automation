@@ -32,12 +32,18 @@ class ImageEditor:
 
         white_background = Image.open("../assets/white_bg.png")
 
-        object_image = object_image.resize(white_background.size)
+        # object_image = object_image.resize(white_background.size)
 
         white_background.paste(object_image, (0, 0), object_image)
 
         white_background.convert("RGB")
         white_background.save("object.png")
+
+        img = cv2.imread("object.png")
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        edges = cv2.Canny(gray, 20, 80)
+        cv2.imwrite("object.png", edges)
 
         # if first_pixel_of_object is not None:
         #     for y in range(height):
