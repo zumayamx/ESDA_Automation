@@ -1,4 +1,0 @@
-2 / 11 / 2025
-- Por ahora toda las imagenes es toman en 3024 x 3024
-- Por ahora todas las imagenes deben ser en formato cuadrado
-- La redimension de iamgenes deberia considerar una razon de tamano como ILoveIMG
