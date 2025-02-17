@@ -2,3 +2,5 @@
 - Por ahora toda las imagenes es toman en 3024 x 3024
 - Por ahora todas las imagenes deben ser en formato cuadrado
 - La redimension de iamgenes deberia considerar una razon de tamano como ILoveIMG
+2 / 16 / 2025
+- Acercar lo mas posible la camara al tomar una foto, respetando unos bordes adecuados dependiendo la pieza
