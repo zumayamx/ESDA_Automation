@@ -39,7 +39,7 @@ class ImageEditor:
     #     plt.axis("off")
     #     plt.show()
 
-    def add_white_background_1(self):
+    def add_white_background(self):
         # Cargar imagen y eliminar fondo
         input_data = np.array(self.image)
         object_array = rembg.remove(input_data)
@@ -71,6 +71,6 @@ class ImageEditor:
  
         
 if __name__ == '__main__':
-    editor = ImageEditor('../images/IMG_2028.jpg')
+    editor = ImageEditor('../images/IMG_2044.jpg')
     # editor.sement_image()
-    editor.add_white_background_1()
+    editor.add_white_background()
