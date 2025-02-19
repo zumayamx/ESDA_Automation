@@ -34,7 +34,6 @@ class ImageEditor:
 
             # Recortar la imagen
             cropped_image = object_image.crop((x_min, y_min, x_max, y_max))
-            # cropped_path = self.file_handler.save_image(cropped_image, "object_cropped.png")
 
             # Agregar fondo blanco
             white_bg_path = os.path.join(self.assets_dir, "white_bg.png")
