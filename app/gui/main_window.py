@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (
     QPushButton, QMessageBox, QApplication, QListWidget, QListWidgetItem,
     QSizePolicy, QProgressDialog
 )
+from core.image_label import ImageLabel
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt
 from core.image_editor import ImageEditor
@@ -14,8 +15,10 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Image Editor")
         self.file_handler = FileHandler()
+        # Dictionary to store ImageEditor instances for each image
         self.image_editors = {}
-        self.current_image_path = None
+        # Path for the currently selected image
+        self.current_image_path = None  
         self._init_ui()
         self._setup_window_size()
 
@@ -31,7 +34,7 @@ class MainWindow(QMainWindow):
     def _create_topbar(self):
         topbar_layout = QHBoxLayout()
         
-        # Button Labels
+        # Button Labels for the top bar
         button_labels = [
             "Cargar directorio de imágenes",
             "Agregar fondo blanco y centrar",
@@ -41,47 +44,43 @@ class MainWindow(QMainWindow):
             "Guardar imagen"
         ]
 
-        # Button References (for access later if needed)
         self.buttons = []
 
         for label in button_labels:
             button = QPushButton(label)
             button.setStyleSheet("border: 2px solid red;")
-
             # Set expanding policy
             button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-
             button.setFixedSize(225, 150)
-            
             topbar_layout.addWidget(button)
-            self.buttons.append(button)  # Store buttons in a list
+            self.buttons.append(button)  # Store each button
 
-        # Ensure each button gets an equal portion of the width
+        # Distribute space evenly among the buttons
         for i in range(len(self.buttons)):
             topbar_layout.setStretch(i, 1)
         
+        # Connect the first two buttons to their actions.
         self.buttons[0].clicked.connect(self.load_folder)
         self.buttons[1].clicked.connect(self.apply_white_background)
-
-        # Wrap layout in a widget
+        self.buttons[2].clicked.connect(self.activate_measure_mode)
+        
         topbar_widget = QWidget()
         topbar_widget.setLayout(topbar_layout)
         topbar_widget.setStyleSheet("border: 1px solid red;")
-        
         return topbar_widget
 
     def _create_content_layout(self):
         content_layout = QHBoxLayout()
         
-        # Create and style left_sidebar
+        # Left Sidebar: List of images
         self.sidebar_widget = self._create_left_sidebar()
         content_layout.addWidget(self.sidebar_widget, 1)
         
-        # Create central content widget
+        # Central Content: Display selected image
         self.content_central_widget = self._create_central_content()
         content_layout.addWidget(self.content_central_widget, 6)
         
-        # Create right left_sidebar
+        # Right Sidebar: Image details or additional data
         self.right_sidebar_widget = self._create_right_sidebar()
         content_layout.addWidget(self.right_sidebar_widget, 1)
         
@@ -96,6 +95,7 @@ class MainWindow(QMainWindow):
 
         self.image_list = QListWidget()
         self.image_list.setStyleSheet("border: 1px solid gray;")
+        # When an image is clicked, display it.
         self.image_list.itemClicked.connect(lambda item: self.display_image(item.data(Qt.ItemDataRole.UserRole)))
         layout.addWidget(self.image_list)
         self.load_image_list()
@@ -104,7 +104,7 @@ class MainWindow(QMainWindow):
         return left_sidebar
     
     def load_image_list(self):
-        """Load all .jpg images from the FileHandler"""
+        """Load all .jpg images from the FileHandler."""
         self.image_list.clear()
         self.image_editors.clear()
 
@@ -113,8 +113,8 @@ class MainWindow(QMainWindow):
             for image_path in images:
                 item = QListWidgetItem(os.path.basename(image_path))
                 item.setData(Qt.ItemDataRole.UserRole, image_path)
-                # Don't miss the reference to the ImageEditor instance
                 self.image_list.addItem(item)
+                # Create and store an ImageEditor instance for each image.
                 self.image_editors[image_path] = ImageEditor(image_path)
         else:
             self.image_list.addItem("No hay imágenes cargadas")
@@ -123,9 +123,9 @@ class MainWindow(QMainWindow):
         image_widget = QWidget()
         layout = QVBoxLayout(image_widget)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.image_label = QLabel("Aquí se mostrará la imagen seleccionada")
+        self.image_label = ImageLabel("Aquí se muestra la imagen seleccionada")
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.image_label.setStyleSheet("border: 2px dashed gray; padding: 10px")
+        # self.image_label.setStyleSheet("border: 2px dashed gray; padding: 10px")
         layout.addWidget(self.image_label)
         image_widget.setStyleSheet("border: 1px solid green;")
         return image_widget
@@ -146,9 +146,6 @@ class MainWindow(QMainWindow):
             screen.center().x() - self.width() / 2,
             screen.center().y() - self.height() / 2
         )
-
-    def toggle_sidebar(self):
-        self.sidebar_widget.setVisible(not self.sidebar_widget.isVisible())
 
     def load_folder(self):
         folder_path = self.file_handler.load_folder()
@@ -178,18 +175,42 @@ class MainWindow(QMainWindow):
             self.display_image(self.current_image_path)
         else:
             QMessageBox.warning(self, "Error", "No se encontró un editor para la imagen seleccionada.")
+    
+    def activate_measure_mode(self):
+        if not self.current_image_path:
+            QMessageBox.warning(self, "Sin selección", "Selecciona una imagen primero.")
+            return
+        self.image_label.set_measure_mode(True)
+        self.image_label.measure_callback = self.measure_line_callback
+    
+    def measure_line_callback(self, start_point, end_point):
+        print("Measure line callback called.")
+        print("Start point:", start_point)
+        print("End point:", end_point)
+        # Calculate the poitns in the image with the scale factor
+        start_point = (start_point.x() * 4.84, start_point.y() * 4.84)
+        end_point = (end_point.x() * 4.84, end_point.y() * 4.84)
+
+        print("Scaled start point:", start_point)
+        print("Scaled end point:", end_point)
+
+
+        editor = self.image_editors.get(self.current_image_path)
+        if editor:
+            editor.apply_measure_line(start_point, end_point)
+            self.display_image(self.current_image_path)
+        else:
+            QMessageBox.warning(self, "Error", "No se encontró un editor para la imagen seleccion")
 
     def display_image(self, image_path):
+        # Set the active image path.
         self.current_image_path = image_path
 
         editor = self.image_editors.get(image_path, None)
-
-        # If the list is already created, it's guaranteed that the editor is also created
         if not editor:
             QMessageBox.critical(self, "Error", "Debe cargar un directorio de imágenes primero.")
             return
         
-        print(f"Displaying image KEY: {image_path}")
         pixmap = QPixmap(editor.image_qt)
         self.image_label.setPixmap(pixmap.scaled(500, 500, Qt.AspectRatioMode.KeepAspectRatio))
         self.image_label.setScaledContents(True)
