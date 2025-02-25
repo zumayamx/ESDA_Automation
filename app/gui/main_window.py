@@ -3,12 +3,15 @@ from PySide6.QtWidgets import (
     QPushButton, QMessageBox, QApplication, QListWidget, QListWidgetItem,
     QSizePolicy, QProgressDialog
 )
-from core.image_label import ImageLabel
+
 from PySide6.QtGui import QPixmap
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QPoint
+import os
+
 from core.image_editor import ImageEditor
 from core.file_handler import FileHandler
-import os
+from core.image_label import ImageLabel
+from core.zoom_selector import ZoomSelector
 
 class MainWindow(QMainWindow):
     def __init__(self, general_size: int = 3024, scaled_size: int = 750):
@@ -68,6 +71,7 @@ class MainWindow(QMainWindow):
         self.buttons[0].clicked.connect(self.load_folder)
         self.buttons[1].clicked.connect(self.apply_white_background)
         self.buttons[2].clicked.connect(self.activate_measure_mode)
+        self.buttons[3].clicked.connect(self.activate_zoom_mode)
         
         topbar_widget = QWidget()
         topbar_widget.setLayout(topbar_layout)
@@ -208,6 +212,56 @@ class MainWindow(QMainWindow):
             self.display_image(self.current_image_path)
         else:
             QMessageBox.warning(self, "Error", "No se encontró un editor para la imagen seleccion")
+    
+    def activate_zoom_mode(self):
+        if not self.current_image_path:
+            QMessageBox.warning(self, "Sin selección", "Selecciona una imagen primero.")
+            return
+        
+        print("Setting cursor to cross")
+        self.image_label.setCursor(Qt.CrossCursor)
+        self.zoom_selector = ZoomSelector(self.image_label)
+        self.zoom_selector.zoomSelected.connect(self.zoom_area_callback)
+        self.zoom_selector.show()
+    
+    def zoom_area_callback(self, center: tuple, radius: int):
+        
+        print("Parameters before scaling:")
+        print("Center:", center)
+        print("Radius:", radius)
+
+
+        scale_factor = (self.original_image_size * self.object_space_factor + self.original_image_size * self.measure_space_factor) / self.scaled_image_size
+        print("Scale factor:", scale_factor)
+        self.zoom_center = (int(center.x() * scale_factor), int(center.y() * scale_factor))
+        self.zoom_radius = int(radius * scale_factor)
+
+        print("Parameters after scaling:")
+        print("Zoom center:", self.zoom_center)
+        print("Zoom radius:", self.zoom_radius)
+
+        QMessageBox.information(self, "Zoom", f"Area de zoom definida en el centro {center} y radio {radius}")
+
+        self.image_label.setCursor(Qt.CrossCursor)
+        self.image_label.mousePressEvent = self.zoom_target_mousePressEvent
+    
+    def zoom_target_mousePressEvent(self, event):
+        scale_factor = (self.original_image_size * self.object_space_factor + self.original_image_size * self.measure_space_factor) / self.scaled_image_size
+        print("Scale factor:", scale_factor)
+        target_point = (int(event.pos().x() * scale_factor), int(event.pos().y() * scale_factor))
+        print("Target point:", target_point)
+
+        editor = self.image_editors.get(self.current_image_path)
+        if editor:
+            print("Arguments for apply_zoom:", self.zoom_center, self.zoom_radius, target_point)
+            editor.apply_zoom(self.zoom_center, self.zoom_radius, target_point)
+            self.display_image(self.current_image_path)
+            print("Zoom applied")
+        else:
+            QMessageBox.warning(self, "Error", "No se encontró un editor para la imagen seleccionada.")
+        
+        self.image_label.setCursor(Qt.ArrowCursor)
+        self.image_label.mousePressEvent = None
 
     def display_image(self, image_path):
         # Set the active image path.

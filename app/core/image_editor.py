@@ -155,5 +155,70 @@ class ImageEditor:
             logger.error("Error applying measure line: %s", e)
             raise e
         
-        def apply_zoom(self):
-            pass
+    def apply_zoom(self, zoom_center: tuple, radius: int, target_point: tuple) -> None:
+            """
+            Applies a zoom transformation to the current image.
+            
+            The process is as follows:
+            1. Extract a circular region from the current image centered at zoom_center with the given radius.
+            2. Scale (zoom) this circular region by a predefined zoom factor.
+            3. Paste the zoomed region into the current image at target_point (centered there).
+            4. Draw a line from zoom_center to target_point to denote the zoom origin.
+            
+            Args:
+                zoom_center (tuple): (x, y) coordinates of the center of the zoom area.
+                radius (int): Radius of the circular zoom area.
+                target_point (tuple): (x, y) coordinates where the zoomed image will be placed.
+            """
+            try:
+                print("Applying zoom")
+                print("Current imge size: ", self.current_image.size)
+                print("Zoom center: ", zoom_center)
+                print("Radius: ", radius)
+                print("Target point: ", target_point)
+                # Define the bounding box of the zoom circle.
+                left = zoom_center[0] - radius
+                upper = zoom_center[1] - radius
+                right = zoom_center[0] + radius
+                lower = zoom_center[1] + radius
+                
+                # Crop the region from the current image.
+                region = self.current_image.crop((left, upper, right, lower))
+                
+                # Create a circular mask.
+                diameter = 2 * radius
+                mask = Image.new("L", (diameter, diameter), 0)
+                mask_draw = ImageDraw.Draw(mask)
+                mask_draw.ellipse((0, 0, diameter, diameter), fill=255)
+                
+                # Define a zoom factor (you can also pass this as an argument).
+                zoom_factor = 2
+                new_size = (int(diameter * zoom_factor), int(diameter * zoom_factor))
+                
+                # Resize the region and its mask.
+                zoomed_region = region.resize(new_size, Image.Resampling.LANCZOS)
+                zoomed_mask = mask.resize(new_size, Image.Resampling.LANCZOS)
+                
+                # Create a copy of the current image to paste onto.
+                new_image = self.current_image.copy()
+                
+                # Calculate the paste coordinates such that the zoomed region is centered at target_point.
+                paste_left = target_point[0] - new_size[0] // 2
+                paste_upper = target_point[1] - new_size[1] // 2
+                
+                new_image.paste(zoomed_region, (paste_left, paste_upper), zoomed_mask)
+                
+                # Draw a line from the zoom center to the target point.
+                draw = ImageDraw.Draw(new_image)
+                line_color = (255, 0, 0)  # Red color for the zoom indicator.
+                line_width = 5
+                draw.line([zoom_center, target_point], fill=line_color, width=line_width)
+                
+                # Update current_image and image_qt.
+                self.current_image = new_image
+                self.history.append(self.current_image.copy())
+                self.image_qt = ImageQt(self.current_image)
+                logger.info("Zoom applied successfully.")
+            except Exception as e:
+                logger.error("Error applying zoom: %s", e)
+                raise e
