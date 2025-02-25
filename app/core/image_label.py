@@ -9,7 +9,8 @@ class ImageLabel(QLabel):
         self.measuring = False
         self.start_point = None
         self.current_point = None
-        self.measure_callback = None  # Función a llamar al finalizar la medida
+        self.measure_callback = None
+        self.setFocusPolicy(Qt.StrongFocus)
 
     def set_measure_mode(self, mode: bool):
         self.measure_mode = mode
@@ -34,22 +35,39 @@ class ImageLabel(QLabel):
     def mouseMoveEvent(self, event):
         if self.measure_mode and self.measuring:
             self.current_point = event.pos()
-            self.update()  # Redibuja para actualizar la línea
+            self.update()  # Redraw to update the line
         else:
             super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
         if self.measure_mode and self.measuring:
             self.measuring = False
-            end_point = event.pos()
-            # Llamamos al callback para procesar la medida
+            end_point = self.current_point
+            # Call the callback to process the measurement.
             if self.measure_callback:
                 self.measure_callback(self.start_point, end_point)
-            # Salimos del modo medida
+            # Exit measure mode.
             self.set_measure_mode(False)
             self.update()
         else:
             super().mouseReleaseEvent(event)
+
+    def keyPressEvent(self, event):
+        if self.measure_mode and self.measuring and self.start_point:
+            key = event.key()
+            if key == Qt.Key_Space:
+                # Snap to nearest axis: horizontal if dx > dy, otherwise vertical.
+                dx = abs(self.current_point.x() - self.start_point.x())
+                dy = abs(self.current_point.y() - self.start_point.y())
+                if dx > dy:
+                    self.current_point = QPoint(self.current_point.x(), self.start_point.y())
+                else:
+                    self.current_point = QPoint(self.start_point.x(), self.current_point.y())
+                self.update()
+            else:
+                super().keyPressEvent(event)
+        else:
+            super().keyPressEvent(event)
 
     def paintEvent(self, event):
         super().paintEvent(event)

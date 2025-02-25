@@ -28,7 +28,8 @@ class ImageEditor:
         history (list): Stack holding versions of the image for undo/redo.
     """
     
-    def __init__(self, image_path: str, general_size: int = 3024) -> None:
+    def __init__(self, image_path: str, general_size: int = 3024, object_space_factor: float = 0.5,
+                 measure_space_factor: float = 0.3, margin_space_factor: int = 0.2) -> None:
         """
         Initialize the ImageEditor with the image at image_path.
         
@@ -47,9 +48,9 @@ class ImageEditor:
         
         # Parameters for layout and transformation.
         self.GENERAL_SIZE = general_size
-        self.OBJECT_SPACE = int(self.GENERAL_SIZE * 0.5)
-        self.MEASURE_SPACE = int(self.GENERAL_SIZE * 0.3)
-        self.MARGIN_SPACE = int(self.GENERAL_SIZE * 0.2)
+        self.OBJECT_SPACE = int(self.GENERAL_SIZE * object_space_factor)
+        self.MEASURE_SPACE = int(self.GENERAL_SIZE * measure_space_factor)
+        self.MARGIN_SPACE = int(self.GENERAL_SIZE *  margin_space_factor)
         
         # Initialize the file handler and assets directory.
         self.file_handler = FileHandler()
@@ -123,10 +124,10 @@ class ImageEditor:
             # Create a drawing context on the current image.
             draw = ImageDraw.Draw(self.current_image)
             
-            # Define properties for the line and markers.
+            # Define properties for the line and markers, dymanic in the future.
             line_color = (0, 0, 0)  # Black color for the measurement line.
-            line_width = 5
-            marker_size = 10
+            line_width = 20
+            marker_size = 40
             
             # Draw the measurement line.
             draw.line([start_point, end_point], fill=line_color, width=line_width)
@@ -146,10 +147,13 @@ class ImageEditor:
             # Update the QImage for UI display.
             self.image_qt = ImageQt(self.current_image)
 
-            print("Current imge size: ", self.current_image.size)
+            # print("Current imge size: ", self.current_image.size)
             # Append the new state to the history stack.
             self.history.append(self.current_image.copy())
             logger.info("Measurement line applied successfully.")
         except Exception as e:
             logger.error("Error applying measure line: %s", e)
             raise e
+        
+        def apply_zoom(self):
+            pass

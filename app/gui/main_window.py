@@ -11,14 +11,19 @@ from core.file_handler import FileHandler
 import os
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, general_size: int = 3024, scaled_size: int = 750):
         super().__init__()
         self.setWindowTitle("Image Editor")
         self.file_handler = FileHandler()
         # Dictionary to store ImageEditor instances for each image
         self.image_editors = {}
         # Path for the currently selected image
-        self.current_image_path = None  
+        self.current_image_path = None
+        self.original_image_size = general_size
+        self.scaled_image_size = scaled_size
+        self.object_space_factor = 0.5
+        self.measure_space_factor = 0.3
+        self.margin_space_factor = 0.2
         self._init_ui()
         self._setup_window_size()
 
@@ -115,7 +120,7 @@ class MainWindow(QMainWindow):
                 item.setData(Qt.ItemDataRole.UserRole, image_path)
                 self.image_list.addItem(item)
                 # Create and store an ImageEditor instance for each image.
-                self.image_editors[image_path] = ImageEditor(image_path)
+                self.image_editors[image_path] = ImageEditor(image_path, self.original_image_size, self.object_space_factor, self.measure_space_factor, self.margin_space_factor)
         else:
             self.image_list.addItem("No hay imágenes cargadas")
 
@@ -125,6 +130,7 @@ class MainWindow(QMainWindow):
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.image_label = ImageLabel("Aquí se muestra la imagen seleccionada")
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # For now, remove the style sheet from the image label, to ensure a propery measure convertion.
         # self.image_label.setStyleSheet("border: 2px dashed gray; padding: 10px")
         layout.addWidget(self.image_label)
         image_widget.setStyleSheet("border: 1px solid green;")
@@ -184,12 +190,13 @@ class MainWindow(QMainWindow):
         self.image_label.measure_callback = self.measure_line_callback
     
     def measure_line_callback(self, start_point, end_point):
-        print("Measure line callback called.")
-        print("Start point:", start_point)
-        print("End point:", end_point)
+
+        scale_factor = (self.original_image_size * self.object_space_factor + self.original_image_size * self.measure_space_factor) / self.scaled_image_size
+        print("Scale factor:", scale_factor)
+
         # Calculate the poitns in the image with the scale factor
-        start_point = (start_point.x() * 4.84, start_point.y() * 4.84)
-        end_point = (end_point.x() * 4.84, end_point.y() * 4.84)
+        start_point = (start_point.x() * scale_factor, start_point.y() * scale_factor)
+        end_point = (end_point.x() * scale_factor, end_point.y() * scale_factor)
 
         print("Scaled start point:", start_point)
         print("Scaled end point:", end_point)
@@ -212,5 +219,5 @@ class MainWindow(QMainWindow):
             return
         
         pixmap = QPixmap(editor.image_qt)
-        self.image_label.setPixmap(pixmap.scaled(500, 500, Qt.AspectRatioMode.KeepAspectRatio))
+        self.image_label.setPixmap(pixmap.scaled(self.scaled_image_size, self.scaled_image_size, Qt.AspectRatioMode.KeepAspectRatio))
         self.image_label.setScaledContents(True)
