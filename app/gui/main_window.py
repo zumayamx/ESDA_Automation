@@ -230,7 +230,6 @@ class MainWindow(QMainWindow):
         print("Center:", center)
         print("Radius:", radius)
 
-
         scale_factor = (self.original_image_size * self.object_space_factor + self.original_image_size * self.measure_space_factor) / self.scaled_image_size
         print("Scale factor:", scale_factor)
         self.zoom_center = (int(center.x() * scale_factor), int(center.y() * scale_factor))
@@ -243,6 +242,7 @@ class MainWindow(QMainWindow):
         QMessageBox.information(self, "Zoom", f"Area de zoom definida en el centro {center} y radio {radius}")
 
         self.image_label.setCursor(Qt.CrossCursor)
+        self.reference = self.image_label.mousePressEvent
         self.image_label.mousePressEvent = self.zoom_target_mousePressEvent
     
     def zoom_target_mousePressEvent(self, event):
@@ -260,8 +260,10 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.warning(self, "Error", "No se encontró un editor para la imagen seleccionada.")
         
+        # Reset the mousePressEvent to the default behavior.
+        self.image_label.mousePressEvent = self.reference
         self.image_label.setCursor(Qt.ArrowCursor)
-        self.image_label.mousePressEvent = None
+        
 
     def display_image(self, image_path):
         # Set the active image path.
