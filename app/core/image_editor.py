@@ -122,12 +122,13 @@ class ImageEditor:
         """
         try:
             # Create a drawing context on the current image.
-            draw = ImageDraw.Draw(self.current_image)
+            image = self.current_image.copy()
+            draw = ImageDraw.Draw(image)
             
             # Define properties for the line and markers, dymanic in the future.
             line_color = (0, 0, 0)  # Black color for the measurement line.
-            line_width = 20
-            marker_size = 40
+            line_width = 10
+            marker_size = 20
             
             # Draw the measurement line.
             draw.line([start_point, end_point], fill=line_color, width=line_width)
@@ -145,6 +146,7 @@ class ImageEditor:
             )
             
             # Update the QImage for UI display.
+            self.current_image = image
             self.image_qt = ImageQt(self.current_image)
 
             # print("Current imge size: ", self.current_image.size)
@@ -210,9 +212,30 @@ class ImageEditor:
                 
                 # Draw a line from the zoom center to the target point.
                 draw = ImageDraw.Draw(new_image)
-                line_color = (255, 0, 0)  # Red color for the zoom indicator.
-                line_width = 5
-                draw.line([zoom_center, target_point], fill=line_color, width=line_width)
+
+                border_width = 10
+                draw.ellipse(
+                    (paste_left, paste_upper, paste_left + new_size[0], paste_upper + new_size[1]),
+                    outline=(0, 0, 0),
+                    width=border_width
+                )
+
+                zoomed_radius = new_size[0] // 2
+                dx = zoom_center[0] - target_point[0]
+                dy = zoom_center[1] - target_point[1]
+                distance = (dx ** 2 + dy ** 2) ** 0.5
+
+                if distance != 0:
+                    line_end = (
+                        target_point[0] + int(zoomed_radius * (dx / distance)),
+                        target_point[1] + int(zoomed_radius * (dy / distance))
+                    )
+                else:
+                    line_end = target_point
+
+                line_color = (0, 0, 0)  # Red color for the zoom indicator.
+                line_width = 10
+                draw.line([zoom_center, line_end], fill=line_color, width=line_width)
                 
                 # Update current_image and image_qt.
                 self.current_image = new_image
@@ -222,3 +245,38 @@ class ImageEditor:
             except Exception as e:
                 logger.error("Error applying zoom: %s", e)
                 raise e
+            
+    def undo(self) -> None:
+        """
+        Reverts the current image to the previous state in the history stack.
+        """
+        print("Current transformations: ", self.history)
+        if len(self.history) > 1:
+            self.history.pop()
+
+            print("Current transformations after undo: ", self.history)
+
+            self.current_image = self.history[-1]
+            self.image_qt = ImageQt(self.current_image)
+            logger.info("Undo operation successful.")
+        else:
+            logger.info("Cannot undo further.")
+        
+    def save(self, save_path: str) -> None:
+        """
+        Saves the current image to the specified path.
+        
+        Args:
+            save_path (str): The path where the image will be saved.
+        """
+        try:
+            print("Path to save: ", save_path)
+
+            #transform current image to JPG image
+            image_to_save = self.current_image.copy()
+            save_path = os.path.join(save_path, "image.jpg")
+            image_to_save.save(save_path)
+            logger.info("Image saved successfully.")
+        except Exception as e:
+            logger.error("Error saving image: %s", e)
+            raise e

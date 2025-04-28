@@ -72,6 +72,8 @@ class MainWindow(QMainWindow):
         self.buttons[1].clicked.connect(self.apply_white_background)
         self.buttons[2].clicked.connect(self.activate_measure_mode)
         self.buttons[3].clicked.connect(self.activate_zoom_mode)
+        self.buttons[4].clicked.connect(self.undo)
+        self.buttons[5].clicked.connect(self.save_image)
         
         topbar_widget = QWidget()
         topbar_widget.setLayout(topbar_layout)
@@ -225,19 +227,11 @@ class MainWindow(QMainWindow):
         self.zoom_selector.show()
     
     def zoom_area_callback(self, center: tuple, radius: int):
-        
-        print("Parameters before scaling:")
-        print("Center:", center)
-        print("Radius:", radius)
 
         scale_factor = (self.original_image_size * self.object_space_factor + self.original_image_size * self.measure_space_factor) / self.scaled_image_size
         print("Scale factor:", scale_factor)
         self.zoom_center = (int(center.x() * scale_factor), int(center.y() * scale_factor))
         self.zoom_radius = int(radius * scale_factor)
-
-        print("Parameters after scaling:")
-        print("Zoom center:", self.zoom_center)
-        print("Zoom radius:", self.zoom_radius)
 
         QMessageBox.information(self, "Zoom", f"Area de zoom definida en el centro {center} y radio {radius}")
 
@@ -277,3 +271,19 @@ class MainWindow(QMainWindow):
         pixmap = QPixmap(editor.image_qt)
         self.image_label.setPixmap(pixmap.scaled(self.scaled_image_size, self.scaled_image_size, Qt.AspectRatioMode.KeepAspectRatio))
         self.image_label.setScaledContents(True)
+
+    def undo(self):
+        editor = self.image_editors.get(self.current_image_path)
+        if editor:
+            editor.undo()
+            self.display_image(self.current_image_path)
+        else:
+            QMessageBox.warning(self, "Error", "No se encontró un editor para la imagen seleccionada.")
+    
+    def save_image(self):
+        editor = self.image_editors.get(self.current_image_path)
+        if editor:
+            editor.save(self.file_handler.output_dir)
+            QMessageBox.information(self, "Éxito", "Imagen guardada correctamente.")
+        else:
+            QMessageBox.warning(self, "Error", "No se encontró un editor para la imagen seleccionada.")
