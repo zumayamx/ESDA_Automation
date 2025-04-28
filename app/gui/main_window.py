@@ -14,19 +14,18 @@ from core.image_label import ImageLabel
 from core.zoom_selector import ZoomSelector
 
 class MainWindow(QMainWindow):
-    def __init__(self, general_size: int = 3024, scaled_size: int = 750):
+    def __init__(self, general_size: int = 3024, scaled_size: int = 550):
         super().__init__()
         self.setWindowTitle("Image Editor")
         self.file_handler = FileHandler()
-        # Dictionary to store ImageEditor instances for each image
         self.image_editors = {}
-        # Path for the currently selected image
         self.current_image_path = None
         self.original_image_size = general_size
         self.scaled_image_size = scaled_size
         self.object_space_factor = 0.5
         self.measure_space_factor = 0.3
         self.margin_space_factor = 0.2
+        self.image_label = None
         self._init_ui()
         self._setup_window_size()
 
@@ -131,16 +130,26 @@ class MainWindow(QMainWindow):
             self.image_list.addItem("No hay imágenes cargadas")
 
     def _create_central_content(self):
-        image_widget = QWidget()
-        layout = QVBoxLayout(image_widget)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.image_label = ImageLabel("Aquí se muestra la imagen seleccionada")
+        """
+        Crea y devuelve el panel central que muestra la imagen seleccionada.
+        """
+        # Panel principal para la imagen
+        imagePanel = QWidget()
+        imagePanel.setStyleSheet("border: 1px solid red;")
+        
+        # Un solo layout para organizar el contenido
+        panelLayout = QVBoxLayout(imagePanel)
+        panelLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # Crear y configurar la etiqueta de imagen
+        self.image_label = ImageLabel("Aquí se muestra la imagen seleccionada")
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        # For now, remove the style sheet from the image label, to ensure a propery measure convertion.
-        # self.image_label.setStyleSheet("border: 2px dashed gray; padding: 10px")
-        layout.addWidget(self.image_label)
-        image_widget.setStyleSheet("border: 1px solid green;")
-        return image_widget
+        self.image_label.setFixedSize(self.scaled_image_size, self.scaled_image_size)
+        
+        # Añadir la etiqueta directamente al layout
+        panelLayout.addWidget(self.image_label)
+        
+        return imagePanel
 
     def _create_right_sidebar(self):
         right_sidebar = QWidget()
@@ -202,7 +211,6 @@ class MainWindow(QMainWindow):
         print("Scaled start point:", start_point)
         print("Scaled end point:", end_point)
 
-
         editor = self.image_editors.get(self.current_image_path)
         if editor:
             editor.apply_measure_line(start_point, end_point)
@@ -260,12 +268,18 @@ class MainWindow(QMainWindow):
 
         editor = self.image_editors.get(image_path, None)
         if not editor:
-            QMessageBox.critical(self, "Error", "Debe cargar un directorio de imágenes primero.")
+            QMessageBox.critical(self, "Error", "Debe cargar un directorio de imágenes primero.")
             return
         
         pixmap = QPixmap(editor.image_qt)
-        self.image_label.setPixmap(pixmap.scaled(self.scaled_image_size, self.scaled_image_size, Qt.AspectRatioMode.KeepAspectRatio))
-        self.image_label.setScaledContents(True)
+        scaled_pixmap = pixmap.scaled(
+            self.scaled_image_size, 
+            self.scaled_image_size,
+            Qt.AspectRatioMode.KeepAspectRatio, 
+            Qt.TransformationMode.SmoothTransformation
+        )
+        
+        self.image_label.setPixmap(scaled_pixmap)
 
     def undo(self):
         editor = self.image_editors.get(self.current_image_path)
