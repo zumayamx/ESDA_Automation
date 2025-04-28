@@ -152,12 +152,7 @@ class MainWindow(QMainWindow):
         return right_sidebar
 
     def _setup_window_size(self):
-        screen = QApplication.primaryScreen().geometry()
-        self.resize(screen.width() * 0.6, screen.height() * 0.6)
-        self.move(
-            screen.center().x() - self.width() / 2,
-            screen.center().y() - self.height() / 2
-        )
+        self.showMaximized()
 
     def load_folder(self):
         folder_path = self.file_handler.load_folder()
